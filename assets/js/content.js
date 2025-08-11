@@ -2,7 +2,7 @@ const userData = {
     personal: {
         name: "Qays Sarayra",
         title: "Security Engineer",
-        logo: "/assets/img/logos/1.png",
+        logo: "assets/img/logos/1.png",
         cv: "/CV/Qays.pdf",
         resume: "/CV/Qays.pdf"
     },
