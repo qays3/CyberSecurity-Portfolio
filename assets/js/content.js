@@ -2,7 +2,7 @@ const userData = {
     personal: {
         name: "Qays Sarayra",
         title: "Security Engineer",
-        logo: "assets/img/logos/1.png",
+        logo: "/assets/img/logos/1.png",
         cv: "/CV/Qays.pdf",
         resume: "/CV/Qays.pdf"
     },
@@ -421,7 +421,8 @@ const state = {
     currentSkillsFilter: 'Security Tools',
     backgroundElements: [],
     currentSlot: 0,
-    sidebarState: window.innerWidth > 768
+    sidebarState: window.innerWidth > 768,
+    isSmallScreen: window.innerWidth <= 768
 };
 
 const getElement = (id) => document.getElementById(id);
@@ -587,7 +588,12 @@ class DataLoader {
                 const githubBtn = document.createElement('button');
                 githubBtn.className = 'project-btn github-btn';
                 githubBtn.setAttribute('data-url', project.github);
-                githubBtn.textContent = 'Open';
+                githubBtn.innerHTML = `
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/>
+                    </svg>
+                    GitHub
+                `;
                 buttonsContainer.appendChild(githubBtn);
             }
             
@@ -595,7 +601,12 @@ class DataLoader {
                 const liveBtn = document.createElement('button');
                 liveBtn.className = 'project-btn live-btn';
                 liveBtn.setAttribute('data-url', project.live);
-                liveBtn.textContent = 'Live';
+                liveBtn.innerHTML = `
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M7 17l9.2-9.2M17 17V7H7"/>
+                    </svg>
+                    Live Demo
+                `;
                 buttonsContainer.appendChild(liveBtn);
             }
             
@@ -886,6 +897,18 @@ class DataLoader {
                 setTimeout(() => likeBtn.style.transform = 'scale(1)', 150);
             });
         }
+
+        window.addEventListener('resize', () => {
+            const wasSmallScreen = state.isSmallScreen;
+            state.isSmallScreen = window.innerWidth <= 768;
+            state.sidebarState = window.innerWidth > 768;
+            
+            if (wasSmallScreen && !state.isSmallScreen) {
+                BackgroundSystem.init();
+            } else if (!wasSmallScreen && state.isSmallScreen) {
+                BackgroundSystem.cleanup();
+            }
+        });
     }
 
     static createCyberHeart() {
@@ -963,11 +986,30 @@ class BackgroundSystem {
         'netstat -antp | grep ESTABLISHED'
     ];
 
+    static animationInterval = null;
+
     static init() {
+        if (state.isSmallScreen) return;
         this.startAnimation();
     }
 
+    static cleanup() {
+        if (this.animationInterval) {
+            clearInterval(this.animationInterval);
+            this.animationInterval = null;
+        }
+        
+        state.backgroundElements.forEach(element => {
+            if (element.parentNode) {
+                element.remove();
+            }
+        });
+        state.backgroundElements = [];
+    }
+
     static getSlots() {
+        if (state.isSmallScreen) return [];
+        
         const baseOffset = state.sidebarState && window.innerWidth > 768 ? '18%' : '5%';
         const rightOffset = state.sidebarState && window.innerWidth > 768 ? '84%' : '82%';
         const centerLeft = state.sidebarState && window.innerWidth > 768 ? '48%' : '40%';
@@ -988,6 +1030,8 @@ class BackgroundSystem {
     }
 
     static createElement() {
+        if (state.isSmallScreen) return;
+        
         if (state.backgroundElements.length >= 9) {
             const old = state.backgroundElements.shift();
             if (old?.parentNode) {
@@ -998,6 +1042,8 @@ class BackgroundSystem {
 
         const content = this.content[Math.floor(Math.random() * this.content.length)];
         const slots = this.getSlots();
+        if (slots.length === 0) return;
+        
         const slot = slots[state.currentSlot];
         state.currentSlot = (state.currentSlot + 1) % slots.length;
 
@@ -1013,11 +1059,13 @@ class BackgroundSystem {
     }
 
     static startAnimation() {
+        if (state.isSmallScreen) return;
+        
         for (let i = 0; i < 3; i++) {
             setTimeout(() => this.createElement(), i * 1000);
         }
         
-        setInterval(() => this.createElement(), 4000);
+        this.animationInterval = setInterval(() => this.createElement(), 4000);
     }
 }
 
@@ -1026,7 +1074,11 @@ window.updateSidebarState = (isOpen) => {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
-    BackgroundSystem.init();
+    state.isSmallScreen = window.innerWidth <= 768;
+    
+    if (!state.isSmallScreen) {
+        BackgroundSystem.init();
+    }
     
     setTimeout(() => {
         DataLoader.init();
